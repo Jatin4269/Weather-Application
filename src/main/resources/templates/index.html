@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Skyline — Weather</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&display=swap');
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family:'Inter',sans-serif; background:#0F1424; color:#EAEDF5;
+            min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+        }
+        .card { width:100%; max-width:480px; background:#1B2A4A; border-radius:20px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.4); }
+        .search-bar { display:flex; gap:8px; padding:20px; }
+        .search-bar input { flex:1; background:#151D33; border:1px solid #2A3B5C; border-radius:10px; padding:12px 14px; color:#EAEDF5; font-size:14px; outline:none; }
+        .search-bar button { background:#FFC857; color:#1B2A4A; border:none; border-radius:10px; padding:12px 18px; font-weight:600; cursor:pointer; }
+
+        .scene { position:relative; height:300px; overflow:hidden; transition:background 1s ease; }
+        .scene.sunny { background:linear-gradient(180deg,#5BA3E0 0%,#8FCBEE 60%,#B9E0F5 100%); }
+        .scene.rainy { background:linear-gradient(180deg,#33455F 0%,#4A6FA5 100%); }
+        .scene.stormy { background:linear-gradient(180deg,#181B22 0%,#2A2E38 100%); }
+        .scene.windy { background:linear-gradient(180deg,#6FA0C4 0%,#A6CBE0 100%); }
+
+        .flash { position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; }
+        .scene.stormy .flash { animation:flash 4s infinite; }
+        @keyframes flash { 0%,90%,100%{opacity:0;} 91%{opacity:0.85;} 92%{opacity:0.1;} 93%{opacity:0.6;} 94%{opacity:0;} }
+
+        .sunwrap { position:absolute; top:20px; left:50%; transform:translateX(-50%); width:100px; height:100px; opacity:0; transition:opacity 0.8s ease; }
+        .scene.sunny .sunwrap { opacity:1; }
+        .rays { position:absolute; inset:0; animation:spin 20s linear infinite; }
+        .rays::before { content:''; position:absolute; inset:-20px; background:
+                repeating-conic-gradient(from 0deg, rgba(255,200,87,0.35) 0deg 8deg, transparent 8deg 20deg); border-radius:50%; }
+        .sun { position:absolute; top:15px; left:15px; width:70px; height:70px; border-radius:50%; background:#FFC857; box-shadow:0 0 50px 18px rgba(255,200,87,0.55); }
+        @keyframes spin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+
+        .bird { position:absolute; width:24px; height:12px; opacity:0; }
+        .scene.sunny .bird { opacity:0.9; animation:fly 9s linear infinite; }
+        .bird::before, .bird::after { content:''; position:absolute; bottom:0; width:13px; height:3px; background:#1B2A4A; border-radius:3px; }
+        .bird::before { left:0; transform-origin:right bottom; transform:rotate(-40deg); animation:flapL 0.5s ease-in-out infinite alternate; }
+        .bird::after { right:0; transform-origin:left bottom; transform:rotate(40deg); animation:flapR 0.5s ease-in-out infinite alternate; }
+        @keyframes flapL { from{transform:rotate(-40deg);} to{transform:rotate(-15deg);} }
+        @keyframes flapR { from{transform:rotate(40deg);} to{transform:rotate(15deg);} }
+        @keyframes fly { from{left:-30px;} to{left:110%;} }
+
+        .cloud { position:absolute; opacity:0; transition:opacity 0.8s ease; }
+        .scene.rainy .cloud, .scene.stormy .cloud { opacity:0.95; }
+        .cloud-shape { position:relative; width:100px; height:34px; background:#DDE3EE; border-radius:40px; }
+        .cloud-shape::before { content:''; position:absolute; width:56px; height:56px; background:#DDE3EE; border-radius:50%; top:-28px; left:12px; }
+        .cloud-shape::after { content:''; position:absolute; width:44px; height:44px; background:#DDE3EE; border-radius:50%; top:-20px; right:10px; }
+        .cloud1 { top:20px; left:5%; } .cloud2 { top:55px; left:52%; transform:scale(0.85); } .cloud3 { top:10px; left:32%; transform:scale(0.7); }
+
+        .drop { position:absolute; width:2px; height:18px; background:rgba(220,230,245,0.75); border-radius:2px; top:-20px; opacity:0; }
+        .scene.rainy .drop, .scene.stormy .drop { opacity:1; animation:fall 0.6s linear infinite; }
+        @keyframes fall { from{transform:translateY(0);} to{transform:translateY(320px);} }
+
+        .tree { position:absolute; bottom:0; width:8px; height:70px; background:#2E4A38; transform-origin:bottom center; opacity:0; }
+        .scene.windy .tree { opacity:1; animation:sway 1.4s ease-in-out infinite alternate; }
+        .tree::before { content:''; position:absolute; top:-40px; left:-22px; width:52px; height:52px; background:#3E6B4A; border-radius:50%; }
+        .tree1 { left:12%; } .tree2 { left:78%; animation-delay:0.2s !important; }
+
+        .leaf { position:absolute; font-size:16px; opacity:0; top:100px; color:#E8B54A; }
+        .scene.windy .leaf { opacity:0.9; animation:blow 3.5s linear infinite; }
+        @keyframes blow { 0%{left:-20px; transform:rotate(0deg);} 100%{left:110%; transform:rotate(400deg);} }
+        @keyframes sway { from{transform:rotate(-6deg);} to{transform:rotate(6deg);} }
+
+        .info { padding:24px; }
+        .temp { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:56px; line-height:1; }
+        .condition { color:#9FB0D0; font-size:15px; margin-top:4px; }
+        .stats { display:flex; gap:20px; margin-top:16px; font-size:13px; color:#9FB0D0; }
+        .error { padding:24px; color:#FF8080; font-size:14px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="search-bar">
+        <input type="text" id="cityInput" placeholder="Enter a city" value="jaipur">
+        <button onclick="loadWeather()">Search</button>
+    </div>
+
+    <div class="scene" id="scene">
+        <div class="flash"></div>
+
+        <div class="sunwrap">
+            <div class="rays"></div>
+            <div class="sun"></div>
+        </div>
+        <div class="bird" style="top:40px; animation-delay:0s"></div>
+        <div class="bird" style="top:65px; animation-delay:2.5s"></div>
+        <div class="bird" style="top:30px; animation-delay:5s"></div>
+
+        <div class="cloud cloud1"><div class="cloud-shape"></div></div>
+        <div class="cloud cloud2"><div class="cloud-shape"></div></div>
+        <div class="cloud cloud3"><div class="cloud-shape"></div></div>
+
+        <div class="tree tree1"></div>
+        <div class="tree tree2"></div>
+        <div class="leaf" style="top:90px"></div>
+        <div class="leaf" style="top:150px"></div>
+        <div class="leaf" style="top:190px"></div>
+    </div>
+
+    <div class="info" id="info">
+        <div class="condition">Search a city to see the weather</div>
+    </div>
+</div>
+
+<script>
+    const scene = document.getElementById('scene');
+
+    for (let i = 0; i < 50; i++) {
+        const drop = document.createElement('div');
+        drop.className = 'drop';
+        drop.style.left = Math.random() * 100 + '%';
+        drop.style.animationDelay = (Math.random() * 0.6) + 's';
+        scene.appendChild(drop);
+    }
+
+    document.querySelectorAll('.leaf').forEach((leaf, i) => {
+        leaf.style.width = '14px';
+        leaf.style.height = '14px';
+        leaf.style.background = '#E8B54A';
+        leaf.style.clipPath = 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
+        leaf.style.animationDelay = (i * 1.2) + 's';
+    });
+
+    function classify(condition, windSpeed) {
+        const c = condition.toLowerCase();
+        if (c.includes('thunder')) return 'stormy';
+        if (c.includes('rain')) return 'rainy';
+        if (windSpeed > 25) return 'windy';
+        if (c.includes('clear') || c.includes('sun')) return 'sunny';
+        if (c.includes('cloud') || c.includes('overcast')) return 'windy';
+        return 'sunny';
+    }
+
+    async function loadWeather() {
+        const city = document.getElementById('cityInput').value.trim();
+        if (!city) return;
+
+        const info = document.getElementById('info');
+        info.innerHTML = '<div class="condition">Loading…</div>';
+
+        try {
+            const res = await fetch('/weather?city=' + encodeURIComponent(city));
+            if (!res.ok) {
+                const err = await res.json();
+                info.innerHTML = '<div class="error">' + err.error + '</div>';
+                scene.className = 'scene';
+                return;
+            }
+            const data = await res.json();
+
+            const state = classify(data.condition, data.windSpeed);
+            scene.className = 'scene ' + state;
+
+            info.innerHTML = `
+        <div class="temp">${Math.round(data.temperature)}°C</div>
+        <div class="condition">${data.condition} · ${data.city}</div>
+        <div class="stats">
+          <span>Feels like ${Math.round(data.feelsLike)}°C</span>
+          <span>Humidity ${Math.round(data.humidity)}%</span>
+          <span>Wind ${Math.round(data.windSpeed)} km/h</span>
+        </div>
+      `;
+        } catch (e) {
+            info.innerHTML = '<div class="error">Something went wrong. Try again.</div>';
+        }
+    }
+
+    loadWeather();
+</script>
+
+</body>
+</html>
