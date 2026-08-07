@@ -80,3 +80,6 @@ The app will be available at `http://localhost:8080`.
 - **Own DTO instead of passing through raw JSON:** decouples the API's public contract from the 3rd-party provider's response shape, and trims the payload down to only what's needed.
 - **Short TTL (5 minutes):** weather data goes stale quickly; a longer cache risks serving outdated conditions during fast-changing weather.
 - **`RestClient` over `RestTemplate`:** `RestTemplate` has been in maintenance mode since Spring 5; `RestClient` is the current recommended synchronous HTTP client.
+
+Roadmap.sh Project:https://roadmap.sh/projects/weather-api-wrapper-service
+  
